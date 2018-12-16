@@ -11,7 +11,7 @@
   },
   "keywords": ["encrypt", "decerypt", "wallet", "sign"],
   "author": "Clemens Brunner",
-  "homepage" : "https://www.sproof.it",
+  "homepage" : "https://sproof.it",
   "dependencies": {
     "bip39": "^2.5.0",
     "eth-ecies": "^1.0.3",
