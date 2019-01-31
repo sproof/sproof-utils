@@ -41,6 +41,18 @@ let unixTimestamp = () => {
   return Math.round(new Date().getTime()/1000);
 }
 
+
+let createCredentials = (seed) => {
+  let hdWallet = hdkey.fromMasterSeed(seed);
+  return {
+    key: (hdWallet.privateExtendedKey().toString('hex')),
+    address: (hdWallet.deriveChild(0).getWallet().getAddressString()),
+    publicKey: (hdWallet.deriveChild(0).getWallet().getPublicKeyString()),
+    privateKey: (hdWallet.deriveChild(0).getWallet().getPrivateKeyString()),
+    mnemonic: seed
+  }
+}
+
 module.exports = {
   getHash : (data) => {
     return addHexPrefix(sha3(data));
@@ -56,15 +68,12 @@ module.exports = {
 
   getCredentials : () => {
     let seed = generateMnemonic();
-    let hdWallet = hdkey.fromMasterSeed(seed);
-      return {
-        key: (hdWallet.privateExtendedKey().toString('hex')),
-        address: (hdWallet.deriveChild(0).getWallet().getAddressString()),
-        publicKey: (hdWallet.deriveChild(0).getWallet().getPublicKeyString()),
-        privateKey: (hdWallet.deriveChild(0).getWallet().getPrivateKeyString()),
-        mnemonic: seed
-      }
-      },
+    return createCredentials(seed);
+  },
+
+  restoreCredentials : (seed) =>  {
+    return createCredentials(seed);
+  },
 
   sign : (message, privateKey) => {
     privateKey = removeHexPrefix(privateKey);
