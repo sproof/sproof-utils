@@ -1,7 +1,7 @@
 {
   "name": "sproof-utils",
   "main": "index.js",
-  "version": "0.0.3",
+  "version": "0.0.8",
   "scripts": {
     "test": "./node_modules/.bin/mocha --reporter spec"
   },
@@ -9,30 +9,25 @@
     "type": "git",
     "url": "https://github.com/sproof/sproof-utils.git"
   },
-  "keywords": ["encrypt", "decerypt", "wallet", "sign"],
+  "license": "ISC",
+  "description": "Utils for sproof.io",
+  "keywords": [
+    "encrypt",
+    "decerypt",
+    "wallet",
+    "sign"
+  ],
   "author": "Clemens Brunner",
-  "homepage" : "https://sproof.it",
+  "homepage": "https://sproof.io",
   "dependencies": {
-    "bip39": "^2.5.0",
+    "bip39": "^3.0.2",
     "eth-ecies": "^1.0.3",
-    "ethereumjs-tx": "^1.3.7",
-    "ethereumjs-util": "^5.2.0",
-    "ethereumjs-wallet": "^0.6.2"
+    "ethereumjs-tx": "2.0.0",
+    "ethereumjs-util": "^6.1.0",
+    "ethereumjs-wallet": "^0.6.3"
   },
   "devDependencies": {
-    "babel-core": "^6.26.3",
-    "babel-eslint": "^8.2.3",
-    "babel-loader": "^7.1.4",
-    "babel-plugin-transform-class-properties": "^6.24.1",
-    "babel-plugin-transform-decorators-legacy": "^1.3.4",
-    "babel-plugin-transform-object-rest-spread": "^6.26.0",
-    "babel-polyfill": "^6.26.0",
-    "babel-preset-es2015": "^6.24.1",
-    "babel-preset-react": "^6.24.1",
-    "babel-preset-react-hmre": "^1.1.1",
-    "babel-preset-stage-1": "^6.24.1",
-    "babel-register": "^6.26.0",
-    "mocha": "^5.1.1",
-    "chai": "^4.2.0"
+    "chai": "^4.2.0",
+    "mocha": "^6.1.4"
   }
 }

@@ -1,7 +1,9 @@
 const utils = require ('ethereumjs-util');
-const Transaction = require ('ethereumjs-tx');
+const EthereumTx = require ('ethereumjs-tx');
 const hdkey = require('ethereumjs-wallet/hdkey');
-const generateMnemonic = require('bip39').generateMnemonic
+const generateMnemonic = require('bip39').generateMnemonic;
+const mnemonicToSeedSync = require('bip39').mnemonicToSeedSync;
+
 const randomBytes = require('crypto').randomBytes;
 const ecies = require ('eth-ecies');
 
@@ -9,16 +11,15 @@ let orderedJson = (o) => {
   return Object.keys(o).sort().reduce((r, k) => (r[k] = o[k], r), {});
 };
 
-
 let sha3 = (data) => {
   if (typeof data === 'string') {
-    return utils.sha3(data).toString('hex')
+    return utils.keccak(data).toString('hex')
   }
   if (Buffer.isBuffer(data))
-    return utils.sha3(data).toString('hex');
+    return utils.keccak(data).toString('hex');
   if (typeof data === 'object') {
     let dataStr = JSON.stringify(orderedJson(data));
-    return utils.sha3(dataStr).toString('hex')
+    return utils.keccak(dataStr).toString('hex')
   }
 };
 
@@ -42,16 +43,19 @@ let unixTimestamp = () => {
 }
 
 
-let createCredentials = (seed) => {
+let createCredentials = (mnemonic) => {
+  let seed = mnemonicToSeedSync(mnemonic);
   let hdWallet = hdkey.fromMasterSeed(seed);
+  let wallet = hdWallet.derivePath("m/44'/60'/0'/0/0").getWallet();
+
   return {
-    key: (hdWallet.privateExtendedKey().toString('hex')),
-    address: (hdWallet.deriveChild(0).getWallet().getAddressString()),
-    publicKey: (hdWallet.deriveChild(0).getWallet().getPublicKeyString()),
-    privateKey: (hdWallet.deriveChild(0).getWallet().getPrivateKeyString()),
-    mnemonic: seed
+    address: (wallet.getAddressString()),
+    publicKey: (wallet.getPublicKeyString()),
+    privateKey: (wallet.getPrivateKeyString()),
+    mnemonic: mnemonic
   }
 }
+
 
 module.exports = {
   getHash : (data) => {
@@ -79,9 +83,9 @@ module.exports = {
     privateKey = removeHexPrefix(privateKey);
     message = removeHexPrefix(message);
 
-    let key = Buffer.isBuffer(privateKey) ? privateKey : new Buffer(privateKey, 'hex');
+    let key = Buffer.isBuffer(privateKey) ? privateKey : Buffer.from(privateKey, 'hex');
     let hash = isHash(message) ? message : sha3(message);
-    let signature = utils.ecsign(new Buffer(hash, 'hex'), key);
+    let signature = utils.ecsign(Buffer.from(hash, 'hex'), key);
 
     return {
       r: addHexPrefix(signature.r.toString('hex')),
@@ -95,16 +99,23 @@ module.exports = {
     publicKeyOrAddress = removeHexPrefix(publicKeyOrAddress);
 
     let hash = isHash(message) ? message : sha3(message);
-    let pub = utils.ecrecover(new Buffer(hash, 'hex'), signature.v, new Buffer(removeHexPrefix(signature.r), 'hex'), new Buffer(removeHexPrefix(signature.s), 'hex'));
+    let pub = utils.ecrecover(Buffer.from(hash, 'hex'), signature.v, Buffer.from(removeHexPrefix(signature.r), 'hex'), Buffer.from(removeHexPrefix(signature.s), 'hex'));
     let addrString = utils.pubToAddress(pub).toString('hex');
     let pubString = pub.toString('hex');
     return (pubString === publicKeyOrAddress || addrString === publicKeyOrAddress);
   },
 
   signTx : (rawTx, privateKey) => {
-    privateKey = new Buffer(removeHexPrefix(privateKey), 'hex');
-    const tx = new Transaction(rawTx);
-    tx.sign(privateKey)
+    privateKey = Buffer.from(removeHexPrefix(privateKey), 'hex');
+
+    let common;
+    if (rawTx.chainId === 3) common = {chain : 'ropsten', hardfork: 'petersburg'};
+    if (rawTx.chainId === 42) common = {chain : 'kovan', hardfork: 'petersburg'};
+
+    const tx = new EthereumTx.Transaction(rawTx, common);
+
+    tx.sign(privateKey);
+
     let txHash = tx.hash();
     return {
       signedTx: addHexPrefix(tx.serialize().toString('hex')),
@@ -120,8 +131,8 @@ module.exports = {
   },
 
   decrypt(privateKey, encryptedData) {
-    privateKey = new Buffer(removeHexPrefix(privateKey), 'hex');
-    let bufferEncryptedData = new Buffer(encryptedData, 'base64');
+    privateKey = Buffer.from(removeHexPrefix(privateKey), 'hex');
+    let bufferEncryptedData = Buffer.from(encryptedData, 'base64');
 
     let decryptedData = ecies.decrypt(privateKey, bufferEncryptedData);
 
@@ -129,8 +140,8 @@ module.exports = {
   },
 
   encrypt(publicKey, data) {
-    publicKey = new Buffer(removeHexPrefix(publicKey), 'hex');
-    let bufferData = new Buffer(JSON.stringify(data));
+    publicKey = Buffer.from(removeHexPrefix(publicKey), 'hex');
+    let bufferData = Buffer.from(JSON.stringify(data));
     let encryptedData = ecies.encrypt(publicKey, bufferData);
     return encryptedData.toString('base64');
   },
