@@ -128,3 +128,18 @@ describe('get credentials', () => {
   });
 
 });
+
+describe('aes', () => {
+  it('encrpty and decrypt', () => {
+    let passphrase = 'abc';
+    let message = ' encrypt me!';
+
+    let encryptedText = utils.encryptAES(passphrase, message);
+
+    let text = utils.decryptAES(passphrase, encryptedText);
+
+    expect(text).to.equal(message);
+
+  });
+
+});

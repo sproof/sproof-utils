@@ -6,6 +6,8 @@ const mnemonicToSeedSync = require('bip39').mnemonicToSeedSync;
 
 const randomBytes = require('crypto').randomBytes;
 const ecies = require ('eth-ecies');
+const aesjs = require('aes-js');
+var   pbkdf2 = require('pbkdf2');
 
 let orderedJson = (o) => {
   return Object.keys(o).sort().reduce((r, k) => (r[k] = o[k], r), {});
@@ -56,30 +58,7 @@ let createCredentials = (mnemonic) => {
   }
 }
 
-
-module.exports = {
-  getHash : (data) => {
-    return addHexPrefix(sha3(data));
-  },
-
-  getSalt : () => {
-    return addHexPrefix(sha3(randomBytes(256).toString('hex')));
-  },
-
-  publicKeyToAddress : (publicKey) => {
-    return addHexPrefix(pubToAddress(publicKey).toString('hex'));
-  },
-
-  getCredentials : () => {
-    let seed = generateMnemonic();
-    return createCredentials(seed);
-  },
-
-  restoreCredentials : (seed) =>  {
-    return createCredentials(seed);
-  },
-
-  sign : (message, privateKey) => {
+let sign = (message, privateKey) => {
     privateKey = removeHexPrefix(privateKey);
     message = removeHexPrefix(message);
 
@@ -92,7 +71,77 @@ module.exports = {
       s: addHexPrefix(signature.s.toString('hex')),
       v: Number.parseInt(signature.v)
     };
+}
+
+
+let encryptAES = (passphrase, message) => {
+  var key_256 = pbkdf2.pbkdf2Sync(passphrase, '', 1, 256 / 8, 'sha512');
+  var messageAsBytes = aesjs.utils.utf8.toBytes(message);
+  var aesCtr = new aesjs.ModeOfOperation.ctr(key_256);
+  var encryptedBytes = aesCtr.encrypt(messageAsBytes);
+  var encryptedHex = aesjs.utils.hex.fromBytes(encryptedBytes);
+  return encryptedHex;
+}
+
+let decryptAES = (passphrase, encryptedMessage) =>{
+  var key_256 = pbkdf2.pbkdf2Sync(passphrase, '', 1, 256 / 8, 'sha512');
+  var encryptedBytes = aesjs.utils.hex.toBytes(encryptedMessage);
+  var aesCtr = new aesjs.ModeOfOperation.ctr(key_256);
+  var decryptedBytes = aesCtr.decrypt(encryptedBytes);
+  var decryptedText = aesjs.utils.utf8.fromBytes(decryptedBytes);
+  return decryptedText;
+}
+
+let  createEncryptedCredentials = (mnemonic, passphrase) => {
+  let credentials =  createCredentials(mnemonic);
+  let timestamp = `${Math.round(new Date()/1000)}`;
+  let signature = sign(timestamp, credentials.privateKey);
+  let encryptedMnemonic = encryptAES(passphrase, credentials.mnemonic);
+
+  return {
+    address: credentials.address,
+    publicKey: credentials.publicKey,
+    encryptedMnemonic: encryptedMnemonic,
+    signature : signature,
+    signedTimestamp: timestamp
+  }
+};
+
+
+
+
+module.exports = {
+  getHash : (data) => {
+    return addHexPrefix(sha3(data));
   },
+
+  getSalt : () => {
+    return addHexPrefix(sha3(randomBytes(256).toString('hex')));
+  },
+
+  publicKeyToAddress : (publicKey) => {
+    return addHexPrefix(utils.pubToAddress(publicKey).toString('hex'));
+  },
+
+  getCredentials : () => {
+    let mnemonic = generateMnemonic();
+    return createCredentials(mnemonic);
+  },
+
+  createEncryptedCredentials : (passphrase) => {
+    let mnemonic = generateMnemonic();
+    return createEncryptedCredentials(mnemonic, passphrase)
+  },
+
+  getEncryptedCredentials : (mnemonic, passphrase) => {
+    return createEncryptedCredentials(mnemonic, passphrase)
+  },
+
+  restoreCredentials : (seed) =>  {
+    return createCredentials(seed);
+  },
+
+  sign : sign,
 
   verify : (message, signature, publicKeyOrAddress) => {
     message = removeHexPrefix(message);
@@ -145,5 +194,10 @@ module.exports = {
     let encryptedData = ecies.encrypt(publicKey, bufferData);
     return encryptedData.toString('base64');
   },
+
+
+  encryptAES : encryptAES,
+  decryptAES : decryptAES
+
 
 };
