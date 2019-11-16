@@ -1,7 +1,7 @@
 {
   "name": "sproof-utils",
   "main": "index.js",
-  "version": "0.0.10",
+  "version": "0.0.11",
   "scripts": {
     "test": "./node_modules/.bin/mocha --reporter spec"
   },
@@ -22,8 +22,8 @@
   "dependencies": {
     "bip39": "^3.0.2",
     "eth-ecies": "^1.0.3",
-    "ethereumjs-tx": "2.0.0",
-    "ethereumjs-util": "^6.1.0",
+    "ethereumjs-tx": "2.1.1",
+    "ethereumjs-util": "^6.2.0",
     "ethereumjs-wallet": "^0.6.3",
     "aes-js": "^3.1.2",
     "pbkdf2": "^3.0.17"
