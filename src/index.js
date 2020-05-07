@@ -66,13 +66,13 @@ let sign = (message, privateKey) => {
     let hash = isHash(message) ? message : sha3(message);
     let signature = utils.ecsign(Buffer.from(hash, 'hex'), key);
 
+
     return {
       r: addHexPrefix(signature.r.toString('hex')),
       s: addHexPrefix(signature.s.toString('hex')),
       v: Number.parseInt(signature.v)
     };
 }
-
 
 let encryptAES = (passphrase, message) => {
   var key_256 = pbkdf2.pbkdf2Sync(passphrase, '', 1, 256 / 8, 'sha512');
@@ -137,8 +137,8 @@ module.exports = {
     return createEncryptedCredentials(mnemonic, passphrase)
   },
 
-  restoreCredentials : (seed) =>  {
-    return createCredentials(seed);
+  restoreCredentials : (mnemonic) =>  {
+    return createCredentials(mnemonic);
   },
 
   sign : sign,
